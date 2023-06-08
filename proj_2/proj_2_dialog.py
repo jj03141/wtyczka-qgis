@@ -24,6 +24,7 @@
 
 import os
 
+from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 
@@ -45,7 +46,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
-        self.pushButton_pole.clicked.connect(self.punkty)
+        self.pushButton_pole.clicked.connect(self.odleglosci)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
@@ -57,17 +58,34 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             feature_geometry = feature.geometry().asPoint()
             self.textEdit_xy.append(f'{feature_geometry}\n')
             
-    def punkty(self):
+    def odleglosci(self):
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
         X = []
         Y = []
+        ODL = []
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
             x = feature_geometry[0]
             y = feature_geometry[1]
             X.append(float(x))
             Y.append(float(y))
-            
+        
+        t = 0
         for i,j in zip(X,Y):
-            self.textEdit_d.append(f'X = {i:.3f}; Y = {j:.3f}\n')
+            #self.textEdit_d.append(f'X = {i:.3f}; Y = {j:.3f}\n')
+            if t == len(X) - 1:
+                m = 0
+            else:
+                m = t + 1
+            dx = X[m] - X[t]
+            dy = Y[m] - Y[t]
+            odl = sqrt(dx**2 + dy**2) 
+            t += 1
+            ODL.append(odl)
+            if t == len(X):
+                break
+            
+        for i in ODL:
+            self.textEdit_d.append(f'Odległość: {i:.3f}\n')
+            
         
