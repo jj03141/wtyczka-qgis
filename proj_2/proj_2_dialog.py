@@ -46,7 +46,12 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         #self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
+        self.radioButton_ary.clicked.connect(self.zmien_jednostke)
+        self.radioButton_hektary.clicked.connect(self.zmien_jednostke)
+        self.radioButton_m2.clicked.connect(self.zmien_jednostke)
         self.pushButton_pole.clicked.connect(self.pole)
+        
+        self.zmien_jednostke()
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
@@ -101,6 +106,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         if n < 3:
             self.label_pole.setText('BŁĄD!')
             self.label_error.setText('Zaznacz więcej punktów!')
+            pole_m2 = 0
         
         else:
             pole = 0
@@ -112,8 +118,22 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                 pole += x1 * y2 - x2 * y1
             
             pole /= 2
-            poletxt = f'Pole: {abs(pole):.3f} [m2]'
-            #self.textEdit_pole.append(f'Pole: {abs(pole):.3f} [m2] \n')
-            self.label_pole.setText(str(poletxt))
+            pole_m2 = abs(pole)
+            poletxt = f'Pole: {pole_m2:.3f} [m2]'
             
+            self.label_pole.setText(str(poletxt))
+        return pole_m2
+            
+    def zmien_jednostke(self):
+        pole_m = self.pole()
+        if self.radioButton_ary.isChecked():
+            pole_a = pole_m/100
+            self.label_pole.setText(f'Pole: {pole_a:.3f} [a]')
+        elif self.radioButton_hektary.isChecked():
+            pole_ha = pole_m /10000
+            self.label_pole.setText(f'Pole: {pole_ha:.3f} [ha]')
+        elif self.radioButton_m2.isChecked():
+            self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
+        else:
+            self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
         

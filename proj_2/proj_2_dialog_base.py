@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_projekt2DialogBase(object):
     def setupUi(self, projekt2DialogBase):
         projekt2DialogBase.setObjectName("projekt2DialogBase")
-        projekt2DialogBase.resize(477, 391)
+        projekt2DialogBase.resize(515, 391)
         self.button_box = QtWidgets.QDialogButtonBox(projekt2DialogBase)
         self.button_box.setGeometry(QtCore.QRect(120, 350, 341, 32))
         self.button_box.setOrientation(QtCore.Qt.Horizontal)
@@ -59,6 +59,15 @@ class Ui_projekt2DialogBase(object):
         self.label_error.setGeometry(QtCore.QRect(30, 140, 191, 41))
         self.label_error.setText("")
         self.label_error.setObjectName("label_error")
+        self.radioButton_m2 = QtWidgets.QRadioButton(projekt2DialogBase)
+        self.radioButton_m2.setGeometry(QtCore.QRect(420, 80, 61, 18))
+        self.radioButton_m2.setObjectName("radioButton_m2")
+        self.radioButton_hektary = QtWidgets.QRadioButton(projekt2DialogBase)
+        self.radioButton_hektary.setGeometry(QtCore.QRect(420, 110, 61, 18))
+        self.radioButton_hektary.setObjectName("radioButton_hektary")
+        self.radioButton_ary = QtWidgets.QRadioButton(projekt2DialogBase)
+        self.radioButton_ary.setGeometry(QtCore.QRect(420, 140, 61, 18))
+        self.radioButton_ary.setObjectName("radioButton_ary")
 
         self.retranslateUi(projekt2DialogBase)
         self.button_box.accepted.connect(projekt2DialogBase.accept) # type: ignore
@@ -72,6 +81,9 @@ class Ui_projekt2DialogBase(object):
         self.pushButton_liczelementy.setText(_translate("projekt2DialogBase", "LiczElementy"))
         self.pushButton_pole.setText(_translate("projekt2DialogBase", "PolePowierzchni"))
         self.label.setText(_translate("projekt2DialogBase", "Aktualna warstwa:"))
+        self.radioButton_m2.setText(_translate("projekt2DialogBase", "[m2]"))
+        self.radioButton_hektary.setText(_translate("projekt2DialogBase", "[ha]"))
+        self.radioButton_ary.setText(_translate("projekt2DialogBase", "[a]"))
 from qgsmaplayercombobox import QgsMapLayerComboBox
 
 
