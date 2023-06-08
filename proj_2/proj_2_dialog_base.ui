@@ -205,6 +205,32 @@
     <string>[a]</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="pushButton_poligon">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>170</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>poligon</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_poligon">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>170</y>
+     <width>121</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>

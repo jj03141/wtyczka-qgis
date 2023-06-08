@@ -68,6 +68,13 @@ class Ui_projekt2DialogBase(object):
         self.radioButton_ary = QtWidgets.QRadioButton(projekt2DialogBase)
         self.radioButton_ary.setGeometry(QtCore.QRect(420, 140, 61, 18))
         self.radioButton_ary.setObjectName("radioButton_ary")
+        self.pushButton_poligon = QtWidgets.QPushButton(projekt2DialogBase)
+        self.pushButton_poligon.setGeometry(QtCore.QRect(30, 170, 81, 31))
+        self.pushButton_poligon.setObjectName("pushButton_poligon")
+        self.label_poligon = QtWidgets.QLabel(projekt2DialogBase)
+        self.label_poligon.setGeometry(QtCore.QRect(160, 170, 121, 41))
+        self.label_poligon.setText("")
+        self.label_poligon.setObjectName("label_poligon")
 
         self.retranslateUi(projekt2DialogBase)
         self.button_box.accepted.connect(projekt2DialogBase.accept) # type: ignore
@@ -84,6 +91,7 @@ class Ui_projekt2DialogBase(object):
         self.radioButton_m2.setText(_translate("projekt2DialogBase", "[m2]"))
         self.radioButton_hektary.setText(_translate("projekt2DialogBase", "[ha]"))
         self.radioButton_ary.setText(_translate("projekt2DialogBase", "[a]"))
+        self.pushButton_poligon.setText(_translate("projekt2DialogBase", "poligon"))
 from qgsmaplayercombobox import QgsMapLayerComboBox
 
 

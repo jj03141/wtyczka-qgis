@@ -27,6 +27,7 @@ import os
 from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -43,6 +44,16 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+
+        # Wyczyść zawartość labeli
+        self.label_pole.clear()
+        self.label_poligon.clear()
+        # Wyczyść inne labele, które mają być wyczyszczone
+
+        # Odznacz wszystkie przyciski RadioButton
+        self.radioButton_ary.setChecked(False)
+        self.radioButton_hektary.setChecked(False)
+        self.radioButton_m2.setChecked(False)
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         #self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
@@ -50,6 +61,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_hektary.clicked.connect(self.zmien_jednostke)
         self.radioButton_m2.clicked.connect(self.zmien_jednostke)
         self.pushButton_pole.clicked.connect(self.pole)
+        self.pushButton_poligon.clicked.connect(self.poligon)
         
         self.zmien_jednostke()
         
@@ -88,13 +100,23 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         for i in ODL:
             self.textEdit_pole.append(f'Odległość: {i:.3f}\n')
         '''
-        
+      
+    def punkty(self):
+        self.label_error.clear()
+        selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
+        pkt = []
+        for feature in selected_features:
+            feature_geometry = feature.geometry().asPoint()
+            x = feature_geometry[0]
+            y = feature_geometry[1]
+            pkt.append((float(x),float(y)))
+        return pkt
+    
     def pole(self):
         self.label_error.clear()
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
         X = []
         Y = []
-        ODL = []
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
             x = feature_geometry[0]
@@ -132,8 +154,41 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         elif self.radioButton_hektary.isChecked():
             pole_ha = pole_m /10000
             self.label_pole.setText(f'Pole: {pole_ha:.3f} [ha]')
-        elif self.radioButton_m2.isChecked():
+        elif self.radioButton_m2 .isChecked():
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
         else:
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
         
+    def poligon(self):
+        xy = self.punkty()
+        punkty = [QgsPointXY(*p) for p in xy]
+        pol_geometry = QgsGeometry.fromPolygonXY([punkty])
+        if not pol_geometry.isGeosValid():
+            self.label_poligon.setText('Nieprawidłowa geometria poligonu')
+            return
+        pol_feature = QgsFeature()
+        pol_feature.setGeometry(pol_geometry)
+        
+        crs = self.mMapLayerComboBox_layers.currentLayer().crs()
+        poligon = QgsVectorLayer("poligon?crs=" + crs.toWkt(), "poligon", "memory")
+        poligon.startEditing()
+        poligon.addFeature(pol_feature)
+        poligon.commitChanges()
+        
+        QgsProject.instance().addMapLayer(poligon)
+        
+        area = poligon.getFeature(0).geometry().area()
+        if area >= 0:
+            self.label_poligon.setText(f'Pole poligonu: {area:.3f}')
+        else:
+            self.label_poligon.setText('Nie można obliczyć pola poligonu')
+            
+            
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.label_pole.clear()
+        self.label_poligon.clear()
+        self.radioButton_ary.setChecked(False)
+        self.radioButton_hektary.setChecked(False)
+        self.radioButton_m2.setChecked(False)
+        self.repaint()
