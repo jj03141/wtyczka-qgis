@@ -45,6 +45,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
+        self.pushButton_pole.clicked.connect(self.punkty)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
@@ -54,5 +55,19 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
-        self.textEdit_xy.append(f'{feature_geometry}\n')
+            self.textEdit_xy.append(f'{feature_geometry}\n')
+            
+    def punkty(self):
+        selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
+        X = []
+        Y = []
+        for feature in selected_features:
+            feature_geometry = feature.geometry().asPoint()
+            x = feature_geometry[0]
+            y = feature_geometry[1]
+            X.append(float(x))
+            Y.append(float(y))
+            
+        for i,j in zip(X,Y):
+            self.textEdit_d.append(f'X = {i:.3f}; Y = {j:.3f}\n')
         

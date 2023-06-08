@@ -26,9 +26,9 @@ class Ui_projekt2DialogBase(object):
         self.pushButton_liczelementy = QtWidgets.QPushButton(projekt2DialogBase)
         self.pushButton_liczelementy.setGeometry(QtCore.QRect(30, 20, 101, 23))
         self.pushButton_liczelementy.setObjectName("pushButton_liczelementy")
-        self.pushButton_polepowierzchni = QtWidgets.QPushButton(projekt2DialogBase)
-        self.pushButton_polepowierzchni.setGeometry(QtCore.QRect(30, 100, 101, 23))
-        self.pushButton_polepowierzchni.setObjectName("pushButton_polepowierzchni")
+        self.pushButton_pole = QtWidgets.QPushButton(projekt2DialogBase)
+        self.pushButton_pole.setGeometry(QtCore.QRect(30, 100, 101, 23))
+        self.pushButton_pole.setObjectName("pushButton_pole")
         self.label_liczbaelementow = QtWidgets.QLabel(projekt2DialogBase)
         self.label_liczbaelementow.setGeometry(QtCore.QRect(160, 20, 41, 21))
         self.label_liczbaelementow.setText("")
@@ -50,8 +50,11 @@ class Ui_projekt2DialogBase(object):
         self.mMapLayerComboBox_layers.setGeometry(QtCore.QRect(250, 20, 131, 21))
         self.mMapLayerComboBox_layers.setObjectName("mMapLayerComboBox_layers")
         self.textEdit_xy = QtWidgets.QTextEdit(projekt2DialogBase)
-        self.textEdit_xy.setGeometry(QtCore.QRect(30, 150, 401, 191))
+        self.textEdit_xy.setGeometry(QtCore.QRect(30, 150, 181, 191))
         self.textEdit_xy.setObjectName("textEdit_xy")
+        self.textEdit_d = QtWidgets.QTextEdit(projekt2DialogBase)
+        self.textEdit_d.setGeometry(QtCore.QRect(250, 150, 181, 191))
+        self.textEdit_d.setObjectName("textEdit_d")
 
         self.retranslateUi(projekt2DialogBase)
         self.button_box.accepted.connect(projekt2DialogBase.accept) # type: ignore
@@ -63,7 +66,7 @@ class Ui_projekt2DialogBase(object):
         projekt2DialogBase.setWindowTitle(_translate("projekt2DialogBase", "projekt2"))
         self.pushButton_dH.setText(_translate("projekt2DialogBase", "RoznicaWysokosci"))
         self.pushButton_liczelementy.setText(_translate("projekt2DialogBase", "LiczElementy"))
-        self.pushButton_polepowierzchni.setText(_translate("projekt2DialogBase", "PolePowierzchni"))
+        self.pushButton_pole.setText(_translate("projekt2DialogBase", "PolePowierzchni"))
 from qgsmaplayercombobox import QgsMapLayerComboBox
 
 
