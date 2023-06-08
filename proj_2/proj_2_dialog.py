@@ -45,19 +45,14 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.setupUi(self)
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
-        self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
-        self.pushButton_pole.clicked.connect(self.odleglosci)
+        #self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
+        self.pushButton_pole.clicked.connect(self.pole)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
         self.label_liczbaelementow.setText(str(liczba_elementów))
         
-    def roznica_wysokosci(self):
-        selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
-        for feature in selected_features:
-            feature_geometry = feature.geometry().asPoint()
-            self.textEdit_xy.append(f'{feature_geometry}\n')
-            
+    '''        
     def odleglosci(self):
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
         X = []
@@ -86,6 +81,39 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                 break
             
         for i in ODL:
-            self.textEdit_d.append(f'Odległość: {i:.3f}\n')
+            self.textEdit_pole.append(f'Odległość: {i:.3f}\n')
+        '''
+        
+    def pole(self):
+        self.label_error.clear()
+        selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
+        X = []
+        Y = []
+        ODL = []
+        for feature in selected_features:
+            feature_geometry = feature.geometry().asPoint()
+            x = feature_geometry[0]
+            y = feature_geometry[1]
+            X.append(float(x))
+            Y.append(float(y))
+        
+        n = len(X)
+        if n < 3:
+            self.label_pole.setText('BŁĄD!')
+            self.label_error.setText('Zaznacz więcej punktów!')
+        
+        else:
+            pole = 0
+            for i in range(n-1):
+                x1 = X[i]
+                y1 = Y[i]
+                x2 = X[i + 1]
+                y2 = Y[i + 1]
+                pole += x1 * y2 - x2 * y1
+            
+            pole /= 2
+            poletxt = f'Pole: {abs(pole):.3f} [m2]'
+            #self.textEdit_pole.append(f'Pole: {abs(pole):.3f} [m2] \n')
+            self.label_pole.setText(str(poletxt))
             
         
