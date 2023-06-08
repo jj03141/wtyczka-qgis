@@ -24,10 +24,12 @@
 
 import os
 
+from qgis.utils import iface
 from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
-from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
+from qgis.core import Qgis, QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
+from qgis.core import QgsMessageLog
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -49,11 +51,6 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.label_pole.clear()
         self.label_poligon.clear()
         # Wyczyść inne labele, które mają być wyczyszczone
-
-        # Odznacz wszystkie przyciski RadioButton
-        self.radioButton_ary.setChecked(False)
-        self.radioButton_hektary.setChecked(False)
-        self.radioButton_m2.setChecked(False)
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         #self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
@@ -62,8 +59,8 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_m2.clicked.connect(self.zmien_jednostke)
         self.pushButton_pole.clicked.connect(self.pole)
         self.pushButton_poligon.clicked.connect(self.poligon)
-        
-        self.zmien_jednostke()
+        self.pushButton_odznacz_wszystko.clicked.connect(self.clear_selection)
+        self.pushButton_wyczysc_konsole.clicked.connect(self.clear_console)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
@@ -128,6 +125,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         if n < 3:
             self.label_pole.setText('BŁĄD!')
             self.label_error.setText('Zaznacz więcej punktów!')
+            iface.messageBar().pushWarning("Ostrzeżenie", "Zaznaczono zbyt mało punktów.")
             pole_m2 = 0
         
         else:
@@ -144,6 +142,10 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             poletxt = f'Pole: {pole_m2:.3f} [m2]'
             
             self.label_pole.setText(str(poletxt))
+            
+            punkty_str = ', '.join(f'PKT{i+1}' for i in range(n))
+            wynik_str = f'Pole powierzchni figury o wierzchołkach w punktach: {punkty_str} wynosi: {pole_m2:.3f} [m2]'
+            iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
         return pole_m2
             
     def zmien_jednostke(self):
@@ -191,4 +193,12 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_ary.setChecked(False)
         self.radioButton_hektary.setChecked(False)
         self.radioButton_m2.setChecked(False)
-        self.repaint()
+        
+    def clear_console(self):
+        iface.messageBar().clearWidgets()
+        
+    def clear_selection(self):
+        layer = self.mMapLayerComboBox_layers.currentLayer()
+        if layer is not None:
+            layer.removeSelection()
+    

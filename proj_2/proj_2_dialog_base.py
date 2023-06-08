@@ -75,6 +75,12 @@ class Ui_projekt2DialogBase(object):
         self.label_poligon.setGeometry(QtCore.QRect(160, 170, 121, 41))
         self.label_poligon.setText("")
         self.label_poligon.setObjectName("label_poligon")
+        self.pushButton_wyczysc_konsole = QtWidgets.QPushButton(projekt2DialogBase)
+        self.pushButton_wyczysc_konsole.setGeometry(QtCore.QRect(180, 300, 111, 23))
+        self.pushButton_wyczysc_konsole.setObjectName("pushButton_wyczysc_konsole")
+        self.pushButton_odznacz_wszystko = QtWidgets.QPushButton(projekt2DialogBase)
+        self.pushButton_odznacz_wszystko.setGeometry(QtCore.QRect(310, 300, 111, 23))
+        self.pushButton_odznacz_wszystko.setObjectName("pushButton_odznacz_wszystko")
 
         self.retranslateUi(projekt2DialogBase)
         self.button_box.accepted.connect(projekt2DialogBase.accept) # type: ignore
@@ -92,6 +98,8 @@ class Ui_projekt2DialogBase(object):
         self.radioButton_hektary.setText(_translate("projekt2DialogBase", "[ha]"))
         self.radioButton_ary.setText(_translate("projekt2DialogBase", "[a]"))
         self.pushButton_poligon.setText(_translate("projekt2DialogBase", "poligon"))
+        self.pushButton_wyczysc_konsole.setText(_translate("projekt2DialogBase", "Wyczyść wyniki"))
+        self.pushButton_odznacz_wszystko.setText(_translate("projekt2DialogBase", "Odznacz wszystko"))
 from qgsmaplayercombobox import QgsMapLayerComboBox
 
 
