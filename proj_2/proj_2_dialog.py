@@ -33,7 +33,7 @@ from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.core import Qgis, QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
-from qgis.core import QgsMessageLog, QgsFields, QgsField
+from qgis.core import QgsMessageLog, QgsFields, QgsField, QgsWkbTypes
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -73,44 +73,13 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.pushButton_odznacz_wszystko.clicked.connect(self.clear_selection)
         self.pushButton_wyczysc_konsole.clicked.connect(self.clear_console)
         self.pushButton_wczytaj_plik.clicked.connect(self.wczytaj)
+        self.pushButton_geometria.clicked.connect(self.dodaj_geometrie)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
         self.label_liczbaelementow.setText(str(liczba_elementów))
         return liczba_elementów
-        
-    '''        
-    def odleglosci(self):
-        selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
-        X = []
-        Y = []
-        ODL = []
-        for feature in selected_features:
-            feature_geometry = feature.geometry().asPoint()
-            x = feature_geometry[0]
-            y = feature_geometry[1]
-            X.append(float(x))
-            Y.append(float(y))
-        
-        t = 0
-        for i,j in zip(X,Y):
-            #self.textEdit_d.append(f'X = {i:.3f}; Y = {j:.3f}\n')
-            if t == len(X) - 1:
-                m = 0
-            else:
-                m = t + 1
-            dx = X[m] - X[t]
-            dy = Y[m] - Y[t]
-            odl = sqrt(dx**2 + dy**2) 
-            t += 1
-            ODL.append(odl)
-            if t == len(X):
-                break
-            
-        for i in ODL:
-            self.textEdit_pole.append(f'Odległość: {i:.3f}\n')
-        '''
-      
+    
     def punkty(self):
         self.label_error.clear()
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
@@ -183,76 +152,6 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
             wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_m:.3f} [m2]'
         iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
-        
-        '''
-    def poligon(self):
-        xy = self.punkty()
-        if not xy:
-            self.label_poligon.setText('Brak punktów')
-            return
-        
-        punkty = [QgsPointXY(*p) for p in xy]
-        punkty.append(punkty[0])
-        
-        pol_geometry = QgsGeometry.fromPolygonXY([punkty])
-        
-        if not pol_geometry.isGeosValid():
-            self.label_poligon.setText('Nieprawidłowa geometria poligonu')
-            return
-        
-        
-        crs = self.mMapLayerComboBox_layers.currentLayer().crs()
-        
-        poligon = QgsVectorLayer("Polygon?crs=" + crs.toWkt(), "poligon", "memory")
-        
-        if not poligon.isValid():
-            self.label_poligon.setText('Nie udało się utworzyć warstwy poligonowej')
-            return
-        
-        pol_provider = poligon.dataProvider()
-        
-        pol_fields = QgsFields()
-        pol_fields.append(QgsField("nazwa", QVariant.String))
-        
-        pol_provider.addAttributes(pol_fields)
-        
-        poligon.updateFields()
-        
-        pol_feature = QgsFeature(pol_fields)
-        pol_feature.setGeometry(pol_geometry)
-
-        #pol_feature.setAttribute("nazwa", "Przykładowa nazwa")
-
-        if not pol_provider.addFeature(pol_feature):
-            self.label_poligon.setText('Nie udało się dodać funkcji do warstwy poligonowej')
-
-        poligon.updateExtents()
-        QgsProject.instance().addMapLayer(poligon)
-        poligon.updateExtents()
-
-        if poligon.featureCount() > 0:
-            pol_feature = poligon.getFeature(0)
-            area = pol_feature.geometry().area()
-
-            if area >= 0:
-                # Tworzenie nowej warstwy z geometrią i atrybutami
-                new_layer = QgsVectorLayer("Polygon?crs=" + poligon.crs().authid(), poligon.name() + "_z_geometrią", "memory")
-                new_layer.dataProvider().addAttributes(poligon.fields().toList())
-                new_layer.updateFields()
-                new_feature = QgsFeature()
-                new_feature.setGeometry(pol_feature.geometry())
-                new_feature.setAttributes(pol_feature.attributes())
-                new_layer.dataProvider().addFeatures([new_feature])
-
-                QgsProject.instance().removeMapLayer(poligon)
-                QgsProject.instance().addMapLayer(new_layer)
-
-                self.label_poligon.setText(f'Pole poligonu: {area:.3f}')
-            else:
-                self.label_poligon.setText('Nie można obliczyć pola poligonu')
-        else:
-            self.label_poligon.setText('Nie udało się dodać funkcji do warstwy poligon')
-'''
 
     def poligon(self):
         xy = self.punkty()
@@ -385,4 +284,56 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                         QMessageBox.warning(self, "Błąd konwersji", "Wystąpił błąd podczas konwersji współrzędnych.")
         
             QgsProject.instance().addMapLayer(layer)
-    
+
+    def dodaj_geometrie(self):
+        warstwa_wejsciowa = self.mMapLayerComboBox_layers.currentLayer()
+
+        if warstwa_wejsciowa is None:
+            QMessageBox.warning(self, "Błąd", "Nie wybrano warstwy.")
+            return
+
+        if len(warstwa_wejsciowa.selectedFeatures()) == 0:
+            QMessageBox.warning(self, "Błąd", "Nie zaznaczono funkcji na warstwie.")
+            return
+
+        aktywna_geometria = warstwa_wejsciowa.selectedFeatures()[0].geometry()
+        
+        # Tworzenie warstwy z dodaną geometrią
+        typ_geometrii = QgsWkbTypes.displayString(aktywna_geometria.wkbType())
+        pola_warstwa = QgsVectorLayer(typ_geometrii, "Poligon_z_dodaną_geometrią", "memory")
+
+        if not pola_warstwa.isValid():
+            QMessageBox.warning(self, "Błąd", "Nie można utworzyć warstwy.")
+            return
+        
+        # Dodanie atrybutu "area" do warstwy
+        pola_warstwa.startEditing()
+        pola_warstwa.addAttribute(QgsField("area", QVariant.Double))
+        pola_warstwa.commitChanges()
+
+        funkcja_z_geometria = QgsFeature()
+        funkcja_z_geometria.setGeometry(aktywna_geometria)
+
+        pola_warstwa.startEditing()
+        pola_warstwa.addFeature(funkcja_z_geometria)
+        pola_warstwa.commitChanges()
+        
+        pola_warstwa.updateFields()
+        
+        # Ustalenie indeksu pola "area"
+        pole_area_index = pola_warstwa.fields().indexFromName("area")
+        if pole_area_index == -1:
+            QMessageBox.warning(self, "Błąd", "Pole 'area' nie istnieje w warstwie.")
+            return
+
+        # Ustawienie wartości atrybutu "area"
+        pola_warstwa.changeAttributeValue(funkcja_z_geometria.id(), pole_area_index, aktywna_geometria.area())
+
+        pola_warstwa.startEditing()
+        pola_warstwa.updateFeature(funkcja_z_geometria)
+        pola_warstwa.commitChanges()
+        
+        QgsProject.instance().addMapLayer(pola_warstwa)
+
+        iface.messageBar().pushMessage("Nowa warstwa została dodana z aktywną geometrią.", level=Qgis.Info)
+        
