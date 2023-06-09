@@ -24,6 +24,7 @@
 
 import os
 
+from PyQt5.QtCore import QVariant
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QMessageBox
 from qgis.PyQt.QtWidgets import QFileDialog, QInputDialog
@@ -32,7 +33,7 @@ from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.core import Qgis, QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog, QgsFields, QgsField
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -119,6 +120,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             x = feature_geometry[0]
             y = feature_geometry[1]
             pkt.append((float(x),float(y)))
+        pkt.reverse()
         return pkt
     
     def pole(self):
@@ -181,30 +183,122 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
             wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_m:.3f} [m2]'
         iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
+        
+        '''
     def poligon(self):
         xy = self.punkty()
+        if not xy:
+            self.label_poligon.setText('Brak punktów')
+            return
+        
         punkty = [QgsPointXY(*p) for p in xy]
+        punkty.append(punkty[0])
+        
         pol_geometry = QgsGeometry.fromPolygonXY([punkty])
+        
         if not pol_geometry.isGeosValid():
             self.label_poligon.setText('Nieprawidłowa geometria poligonu')
             return
-        pol_feature = QgsFeature()
-        pol_feature.setGeometry(pol_geometry)
+        
         
         crs = self.mMapLayerComboBox_layers.currentLayer().crs()
-        poligon = QgsVectorLayer("poligon?crs=" + crs.toWkt(), "poligon", "memory")
-        poligon.startEditing()
-        poligon.addFeature(pol_feature)
-        poligon.commitChanges()
         
+        poligon = QgsVectorLayer("Polygon?crs=" + crs.toWkt(), "poligon", "memory")
+        
+        if not poligon.isValid():
+            self.label_poligon.setText('Nie udało się utworzyć warstwy poligonowej')
+            return
+        
+        pol_provider = poligon.dataProvider()
+        
+        pol_fields = QgsFields()
+        pol_fields.append(QgsField("nazwa", QVariant.String))
+        
+        pol_provider.addAttributes(pol_fields)
+        
+        poligon.updateFields()
+        
+        pol_feature = QgsFeature(pol_fields)
+        pol_feature.setGeometry(pol_geometry)
+
+        #pol_feature.setAttribute("nazwa", "Przykładowa nazwa")
+
+        if not pol_provider.addFeature(pol_feature):
+            self.label_poligon.setText('Nie udało się dodać funkcji do warstwy poligonowej')
+
+        poligon.updateExtents()
         QgsProject.instance().addMapLayer(poligon)
-        
-        area = poligon.getFeature(0).geometry().area()
-        if area >= 0:
-            self.label_poligon.setText(f'Pole poligonu: {area:.3f}')
+        poligon.updateExtents()
+
+        if poligon.featureCount() > 0:
+            pol_feature = poligon.getFeature(0)
+            area = pol_feature.geometry().area()
+
+            if area >= 0:
+                # Tworzenie nowej warstwy z geometrią i atrybutami
+                new_layer = QgsVectorLayer("Polygon?crs=" + poligon.crs().authid(), poligon.name() + "_z_geometrią", "memory")
+                new_layer.dataProvider().addAttributes(poligon.fields().toList())
+                new_layer.updateFields()
+                new_feature = QgsFeature()
+                new_feature.setGeometry(pol_feature.geometry())
+                new_feature.setAttributes(pol_feature.attributes())
+                new_layer.dataProvider().addFeatures([new_feature])
+
+                QgsProject.instance().removeMapLayer(poligon)
+                QgsProject.instance().addMapLayer(new_layer)
+
+                self.label_poligon.setText(f'Pole poligonu: {area:.3f}')
+            else:
+                self.label_poligon.setText('Nie można obliczyć pola poligonu')
         else:
-            self.label_poligon.setText('Nie można obliczyć pola poligonu')
-            
+            self.label_poligon.setText('Nie udało się dodać funkcji do warstwy poligon')
+'''
+
+    def poligon(self):
+        xy = self.punkty()
+        if not xy:
+            self.label_poligon.setText('Brak punktów')
+            return
+    
+        punkty = [QgsPointXY(*p) for p in xy]
+        punkty.append(punkty[0])
+
+        pol_geom = QgsGeometry.fromPolygonXY([punkty])
+
+        if not pol_geom.isGeosValid():
+            self.label_poligon.setText('Nieprawidłowa geometria poligonu')
+            return
+    
+        crs = self.mMapLayerComboBox_layers.currentLayer().crs()
+        poligon = QgsVectorLayer("Polygon?crs=" + crs.toWkt(), "poligon", "memory")
+
+        if not poligon.isValid():
+            self.label_poligon.setText('Nie udało się utworzyć warstwy poligonowej')
+            return
+
+        pol_provider = poligon.dataProvider()
+
+        pol_fields = QgsFields()
+        pol_fields.append(QgsField("nazwa", QVariant.String))
+    
+        pol_provider.addAttributes(pol_fields)
+    
+        poligon.updateFields()
+        
+        pol_feature = QgsFeature(pol_fields)
+        pol_feature.setGeometry(pol_geom)
+    
+        if not pol_provider.addFeature(pol_feature):
+            self.label_poligon.setText('Nie udało się dodać funkcji do warstwy poligonowej')
+    
+        QgsProject.instance().addMapLayer(poligon)
+    
+        #self.canvas.refresh()
+        iface.messageBar().pushMessage("Poligon został utworzony", level=Qgis.Info)
+        #self.label_poligon.setText('Poligon utworzony')
+
+
+
             
     def closeEvent(self, event):
         super().closeEvent(event)
