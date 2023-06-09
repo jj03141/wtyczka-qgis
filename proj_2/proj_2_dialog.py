@@ -24,6 +24,9 @@
 
 import os
 
+from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtWidgets import QMessageBox
+from qgis.PyQt.QtWidgets import QFileDialog, QInputDialog
 from qgis.utils import iface
 from math import *
 from qgis.PyQt import uic
@@ -40,6 +43,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(projekt2Dialog, self).__init__(parent)
+        self.tableWidget = QtWidgets.QTableWidget()
         # Set up the user interface from Designer through FORM_CLASS.
         # After self.setupUi() you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -61,6 +65,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.pushButton_poligon.clicked.connect(self.poligon)
         self.pushButton_odznacz_wszystko.clicked.connect(self.clear_selection)
         self.pushButton_wyczysc_konsole.clicked.connect(self.clear_console)
+        self.pushButton_wczytaj_plik.clicked.connect(self.wczytaj)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
@@ -201,4 +206,74 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         layer = self.mMapLayerComboBox_layers.currentLayer()
         if layer is not None:
             layer.removeSelection()
+            
+    def wczytaj(self):
+        uklad, ok = QInputDialog.getItem(self, "Wybierz układ współrzędnych", "Wybierz układ:", ["PL-1992", "PL-2000"], 0, False)
+        if ok:
+            dialog = QFileDialog()
+            dialog.setFileMode(QFileDialog.AnyFile)
+            dialog.setNameFilter("Dokumenty tekstowe (*.txt);;Pliki CSV (*.csv)")
+
+            if not dialog.exec_():
+                return
+            wybrany_plik = dialog.selectedFiles()[0]
+            
+            if wybrany_plik.endswith(".txt"):
+                with open(wybrany_plik, 'r') as plik:
+                    lines = plik.readlines()
+                    wiersze = [line.strip().split(',') for line in lines]
+        
+            elif wybrany_plik.endswith(".csv"):
+                with open(wybrany_plik, 'r') as plik:
+                    csv_reader = csv.reader(plik)
+                    wiersze = [row for row in csv_reader]
+                
+                
+            if len(wiersze) == 0 or len(wiersze[0]) < 2:
+                QMessageBox.warning(self, "Nieodpowiedni plik", "Wybrany plik ma więcej niż 2 kolumny danych.")
+                return
+            # Utworzenie tabeli o odpowiedniej liczbie wierszy i kolumn
+            self.tableWidget.setRowCount(len(wiersze))
+            self.tableWidget.setColumnCount(len(wiersze[0]))
+                
+                # Wypełnij tabelę danymi
+            for i, wiersz in enumerate(wiersze):
+                for j, wartosc in enumerate(wiersz):
+                    p = QTableWidgetItem(wartosc)
+                    self.tableWidget.setItem(i, j, p)
+                    
+            if uklad == "PL-1992":
+                uklad_epsg = "EPSG:2180"
+            elif uklad == "PL-2000":
+                strefa, ok = QInputDialog.getItem(self, "Wybierz strefę PL-2000", "Wybierz strefę:", ["Strefa 5", "Strefa 6", "Strefa 7", "Strefa 8"], 0, False)
+            if not ok:
+                return
+            if strefa == "Strefa 5":
+                uklad_epsg = "EPSG:2176"
+            elif strefa == "Strefa 6":
+                uklad_epsg = "EPSG:2177"
+            elif strefa == "Strefa 7":
+                uklad_epsg = "EPSG:2178"
+            elif strefa == "Strefa 8":
+                uklad_epsg = "EPSG:2179"
+                
+             # Dodanie warstwy do projektu QGIS
+            uri = "Point?crs={}".format(uklad_epsg)
+            layer = QgsVectorLayer(uri, "Warstwa", "memory")
+            provider = layer.dataProvider()
+        
+            for wiersz in wiersze:
+                if wiersz[0] and wiersz[1]:  # Sprawdź, czy wartości nie są puste
+                    try:
+                        x = float(wiersz[0])
+                        y = float(wiersz[1])
+                        feature = QgsFeature()
+                        point = QgsPointXY(x, y)
+                        geometry = QgsGeometry.fromPointXY(point)
+                        feature.setGeometry(geometry)
+                        provider.addFeature(feature)
+                    except ValueError:
+                        QMessageBox.warning(self, "Błąd konwersji", "Wystąpił błąd podczas konwersji współrzędnych.")
+        
+            QgsProject.instance().addMapLayer(layer)
     
