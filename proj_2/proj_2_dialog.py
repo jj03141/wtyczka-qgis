@@ -142,11 +142,11 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         
         else:
             pole = 0
-            for i in range(n-1):
+            for i in range(n):
                 x1 = X[i]
                 y1 = Y[i]
-                x2 = X[i + 1]
-                y2 = Y[i + 1]
+                x2 = X[(i + 1) % n]
+                y2 = Y[(i + 1) % n]
                 pole += x1 * y2 - x2 * y1
             
             pole /= 2
