@@ -56,6 +56,12 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.label_poligon.clear()
         # Wyczyść inne labele, które mają być wyczyszczone
         
+        #ukryj radiobuttony 
+        self.radioButton_ary.setVisible(False)
+        self.radioButton_hektary.setVisible(False)
+        self.radioButton_m2.setVisible(False)
+        
+        
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
         #self.pushButton_dH.clicked.connect(self.roznica_wysokosci)
         self.radioButton_ary.clicked.connect(self.zmien_jednostke)
@@ -70,6 +76,7 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
         self.label_liczbaelementow.setText(str(liczba_elementów))
+        return liczba_elementów
         
     '''        
     def odleglosci(self):
@@ -147,25 +154,33 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             poletxt = f'Pole: {pole_m2:.3f} [m2]'
             
             self.label_pole.setText(str(poletxt))
+            self.radioButton_ary.setVisible(True)
+            self.radioButton_hektary.setVisible(True)
+            self.radioButton_m2.setVisible(True)
             
-            punkty_str = ', '.join(f'PKT{i+1}' for i in range(n))
-            wynik_str = f'Pole powierzchni figury o wierzchołkach w punktach: {punkty_str} wynosi: {pole_m2:.3f} [m2]'
+            punkty_str = self.licz_elementy()
+            wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_m2:.3f} [m2]'
             iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
         return pole_m2
             
     def zmien_jednostke(self):
         pole_m = self.pole()
+        punkty_str = self.licz_elementy()
         if self.radioButton_ary.isChecked():
             pole_a = pole_m/100
             self.label_pole.setText(f'Pole: {pole_a:.3f} [a]')
+            wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_a:.3f} [a]'
         elif self.radioButton_hektary.isChecked():
             pole_ha = pole_m /10000
             self.label_pole.setText(f'Pole: {pole_ha:.3f} [ha]')
+            wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_ha:.3f} [ha]'
         elif self.radioButton_m2 .isChecked():
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
+            wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_m:.3f} [m2]'
         else:
             self.label_pole.setText(f'Pole: {pole_m:.3f} [m2]')
-        
+            wynik_str = f'Pole powierzchni figury o wybranych {punkty_str} wierzchołkach wynosi: {pole_m:.3f} [m2]'
+        iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
     def poligon(self):
         xy = self.punkty()
         punkty = [QgsPointXY(*p) for p in xy]
@@ -246,16 +261,16 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                 uklad_epsg = "EPSG:2180"
             elif uklad == "PL-2000":
                 strefa, ok = QInputDialog.getItem(self, "Wybierz strefę PL-2000", "Wybierz strefę:", ["Strefa 5", "Strefa 6", "Strefa 7", "Strefa 8"], 0, False)
-            if not ok:
-                return
-            if strefa == "Strefa 5":
-                uklad_epsg = "EPSG:2176"
-            elif strefa == "Strefa 6":
-                uklad_epsg = "EPSG:2177"
-            elif strefa == "Strefa 7":
-                uklad_epsg = "EPSG:2178"
-            elif strefa == "Strefa 8":
-                uklad_epsg = "EPSG:2179"
+                if not ok:
+                    return
+                if strefa == "Strefa 5":
+                    uklad_epsg = "EPSG:2176"
+                elif strefa == "Strefa 6":
+                    uklad_epsg = "EPSG:2177"
+                elif strefa == "Strefa 7":
+                    uklad_epsg = "EPSG:2178"
+                elif strefa == "Strefa 8":
+                    uklad_epsg = "EPSG:2179"
                 
              # Dodanie warstwy do projektu QGIS
             uri = "Point?crs={}".format(uklad_epsg)
