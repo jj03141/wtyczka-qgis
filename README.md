@@ -39,6 +39,7 @@ Jest to pole, w którym wybieramy warstwę na której będziemy przeprowadzać o
 Przycisk po wciśnięciu zwraca liczbę zaznaczonych elementów.
 
 **Różnica odległości** \
+Przycisk przeznaczony jest dla punktów mających atrybut wysokości oznaczony jako *"h"*.
 Po wciśnięciu, z prawej strony przycisku, program wyświetla różnicę wysokości między zaznaczonymi punktami podaną w metrach.
 Z prawej strony okna wyświetlają się również trzy przyciski do zmiany jednostki wyświetlanego wyniku. Po wyborze któregoś z nich program powinien 
 wyświetlić wynik w odpowiedniej jednostce, gdzie:
