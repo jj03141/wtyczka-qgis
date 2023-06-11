@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>557</width>
+    <width>573</width>
     <height>391</height>
    </rect>
   </property>
@@ -161,7 +161,7 @@
     <rect>
      <x>470</x>
      <y>77</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -174,7 +174,7 @@
     <rect>
      <x>470</x>
      <y>110</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -187,7 +187,7 @@
     <rect>
      <x>470</x>
      <y>140</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -195,7 +195,7 @@
     <string>[a]</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_poligon">
+  <widget class="QPushButton" name="pushButton_az_odw">
    <property name="geometry">
     <rect>
      <x>180</x>
@@ -205,7 +205,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Rysuj poligon</string>
+    <string>Azymut odwrotny</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton_wyczysc_konsole">
@@ -247,7 +247,7 @@
     <string>Wczytaj plik</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_geometria">
+  <widget class="QPushButton" name="pushButton_poligon">
    <property name="geometry">
     <rect>
      <x>350</x>
@@ -257,7 +257,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Dodaj geometrię</string>
+    <string>Rysuj poligon</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton_odleglosc">
@@ -317,7 +317,7 @@
     <rect>
      <x>470</x>
      <y>140</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -330,7 +330,7 @@
     <rect>
      <x>470</x>
      <y>110</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -343,7 +343,7 @@
     <rect>
      <x>470</x>
      <y>110</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -356,7 +356,7 @@
     <rect>
      <x>470</x>
      <y>140</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -369,7 +369,7 @@
     <rect>
      <x>470</x>
      <y>80</y>
-     <width>61</width>
+     <width>101</width>
      <height>31</height>
     </rect>
    </property>
@@ -377,12 +377,70 @@
     <string>[g]</string>
    </property>
   </widget>
+  <widget class="QRadioButton" name="radioButton_m_dh">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>80</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>[m]</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radioButton_cm">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>110</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>[cm]</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="radioButton_mm">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>140</y>
+     <width>101</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>[mm]</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_az_odw">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>240</y>
+     <width>141</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
   <zorder>radioButton_radiany</zorder>
   <zorder>radioButton_ary</zorder>
+  <zorder>radioButton_kilometry</zorder>
+  <zorder>radioButton_mm</zorder>
+  <zorder>radioButton_cm</zorder>
   <zorder>radioButton_stopnie</zorder>
   <zorder>radioButton_hektary</zorder>
+  <zorder>radioButton_metry</zorder>
+  <zorder>radioButton_m_dh</zorder>
   <zorder>radioButton_m2</zorder>
   <zorder>radioButton_grady</zorder>
+  <zorder>label_az_odw</zorder>
   <zorder>button_box</zorder>
   <zorder>pushButton_dH</zorder>
   <zorder>pushButton_liczelementy</zorder>
@@ -394,17 +452,15 @@
   <zorder>mMapLayerComboBox_layers</zorder>
   <zorder>label</zorder>
   <zorder>label_error</zorder>
-  <zorder>pushButton_poligon</zorder>
+  <zorder>pushButton_az_odw</zorder>
   <zorder>pushButton_wyczysc_konsole</zorder>
   <zorder>pushButton_odznacz_wszystko</zorder>
   <zorder>pushButton_wczytaj_plik</zorder>
-  <zorder>pushButton_geometria</zorder>
+  <zorder>pushButton_poligon</zorder>
   <zorder>pushButton_odleglosc</zorder>
   <zorder>label_odleglosc</zorder>
   <zorder>pushButton_azymut</zorder>
   <zorder>label_azymut</zorder>
-  <zorder>radioButton_metry</zorder>
-  <zorder>radioButton_kilometry</zorder>
  </widget>
  <customwidgets>
   <customwidget>

@@ -24,15 +24,7 @@
 
 import os
 import csv
-import numpy as np
-from scipy.spatial import Delaunay
-from scipy.spatial import ConvexHull
-from PyQt5.QtCore import Qt
-
 from PyQt5.QtCore import QVariant
-from PyQt5.QtCore import pyqtSignal
-from qgis.PyQt.QtCore import QCoreApplication
-
 from PyQt5.QtWidgets import QTableWidgetItem
 from PyQt5.QtWidgets import QMessageBox
 from qgis.PyQt.QtWidgets import QFileDialog, QInputDialog
@@ -41,10 +33,8 @@ from math import *
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 from qgis.core import Qgis, QgsFeature, QgsGeometry, QgsVectorLayer, QgsProject, QgsPointXY
-from qgis.core import QgsMessageLog, QgsFields, QgsField, QgsWkbTypes, QgsFeedback
-from qgis.gui import QgsMapToolEmitPoint, QgsMapMouseEvent
-from qgis.core import QgsApplication
-from qgis.gui import QgsMapTool
+from qgis.core import QgsFields, QgsField, QgsWkbTypes
+
 
 
 
@@ -81,6 +71,10 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(False)
         self.radioButton_grady.setVisible(False)
         self.radioButton_radiany.setVisible(False)
+        self.radioButton_mm.setVisible(False)
+        self.radioButton_cm.setVisible(False)
+        self.radioButton_m_dh.setVisible(False)
+        self.pushButton_az_odw.setVisible(False)
         
         
         self.pushButton_liczelementy.clicked.connect(self.licz_elementy)
@@ -90,50 +84,51 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_m2.clicked.connect(self.zmien_jednostke_pole)
         self.radioButton_metry.clicked.connect(self.zmien_jednostke_odl)
         self.radioButton_kilometry.clicked.connect(self.zmien_jednostke_odl)
-        self.radioButton_radiany.clicked.connect(self.zmien_jednostke_azymut)
-        self.radioButton_stopnie.clicked.connect(self.zmien_jednostke_azymut)
-        self.radioButton_grady.clicked.connect(self.zmien_jednostke_azymut)
+        self.radioButton_radiany.clicked.connect(self.zmien_jednostki)
+        self.radioButton_stopnie.clicked.connect(self.zmien_jednostki)
+        self.radioButton_grady.clicked.connect(self.zmien_jednostki)
+        self.radioButton_cm.clicked.connect(self.zmien_jednostke_dh)
+        self.radioButton_mm.clicked.connect(self.zmien_jednostke_dh)
+        self.radioButton_m_dh.clicked.connect(self.zmien_jednostke_dh)
         self.pushButton_pole.clicked.connect(self.pole)
         self.pushButton_poligon.clicked.connect(self.poligon)
         self.pushButton_odznacz_wszystko.clicked.connect(self.clear_selection)
         self.pushButton_wyczysc_konsole.clicked.connect(self.clear_console)
         self.pushButton_wczytaj_plik.clicked.connect(self.wczytaj)
-        self.pushButton_geometria.clicked.connect(self.dodaj_geometrie)
         self.pushButton_odleglosc.clicked.connect(self.odleglosc)
         self.pushButton_azymut.clicked.connect(self.azymut)
+        self.pushButton_az_odw.clicked.connect(self.az_odw)
         
     def licz_elementy(self):
         liczba_elementów = len(self.mMapLayerComboBox_layers.currentLayer().selectedFeatures())
         self.label_liczbaelementow.setText(str(liczba_elementów))
         return liczba_elementów
     
+    
+    
     def punkty(self):
         self.label_error.clear()
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
         pkt = []
-        X = []
-        Y = []
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
             x = feature_geometry[0]
             y = feature_geometry[1]
-            X.append(float(x))
-            Y.append(float(y))
-            #pkt.append((float(x),float(y)))
-            
-        # Sortowanie punktów zgodnie z metodą lewej ręki
-        points = sorted(zip(X, Y), key=lambda point: (-point[1], point[0]))
-
-        # Aktualizacja list X i Y z posortowanymi punktami
-        X = [point[0] for point in points]
-        Y = [point[1] for point in points]
+            pkt.append([float(x), float(y)])
         
-        for i,j in zip(X,Y):
-            pkt.append((i,j))
-        pkt.reverse()
+        pkt = self.sortuj_punkty(pkt)
         return pkt
     
     def roznica_wysokosci(self):
+        self.label_error.clear()
+        self.radioButton_ary.setVisible(False)
+        self.radioButton_hektary.setVisible(False)
+        self.radioButton_m2.setVisible(False)
+        self.radioButton_kilometry.setVisible(False)
+        self.radioButton_metry.setVisible(False)
+        self.radioButton_stopnie.setVisible(False)
+        self.radioButton_grady.setVisible(False)
+        self.radioButton_radiany.setVisible(False)
         # Sprawdzenie, czy w QGIS zaznaczono dokładnie dwa punkty
         if len(iface.activeLayer().selectedFeatures()) != 2:
             self.label_error.setText('Zaznacz dokładnie 2 punkty!')
@@ -142,25 +137,28 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         # Pobranie zaznaczonych punktów
         warstwa = iface.activeLayer()
         zaznaczone_punkty = warstwa.selectedFeatures()
-        punkt1 = f'{zaznaczone_punkty[0]}'
-        punkt2 = f'{zaznaczone_punkty[1]}'
     
         # Sprawdzenie, czy atrybut elevation istnieje dla obu punktów
-        if "elevation" not in zaznaczone_punkty[0].fields().names() or "elevation" not in zaznaczone_punkty[1].fields().names():
+        if "h" not in zaznaczone_punkty[0].fields().names() or "h" not in zaznaczone_punkty[1].fields().names():
             iface.messageBar().pushWarning("Ostrzeżenie", "Wybrane punkty nie mają atrybutu wysokości.")
             return
     
         # Pobranie wysokości zaznaczonych punktów
-        wysokosc_punktu_1 = zaznaczone_punkty[0]["elevation"]
-        wysokosc_punktu_2 = zaznaczone_punkty[1]["elevation"]
+        wysokosc_punktu_1 = zaznaczone_punkty[0]["h"]
+        wysokosc_punktu_2 = zaznaczone_punkty[1]["h"]
     
         # Obliczenie różnicy wysokości
-        roznica_wysokosci = wysokosc_punktu_2 - wysokosc_punktu_1
-        dH_txt = f'{roznica_wysokosci:.3f} [m]'
+        dH = wysokosc_punktu_2 - wysokosc_punktu_1
+        dH_txt = f'{dH:.3f} [m]'
+        
+        self.radioButton_mm.setVisible(True)
+        self.radioButton_cm.setVisible(True)
+        self.radioButton_m_dh.setVisible(True)
         
         # Wyświetlenie wyniku
         self.label_dH.setText(dH_txt)
-        iface.messageBar().pushMessage("Informacja", f'Różnica wysokości między punktem {punkt1} a punktem {punkt2} wynosi: {dH_txt} [m]', level=Qgis.Info)
+        iface.messageBar().pushMessage("Wynik", f'Różnica wysokości między wybranymi punktami wynosi: {dH_txt}', level=Qgis.Info)
+        return dH
     
     def odleglosc(self):
         self.radioButton_ary.setVisible(False)
@@ -169,6 +167,10 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(False)
         self.radioButton_grady.setVisible(False)
         self.radioButton_radiany.setVisible(False)
+        self.radioButton_cm.setVisible(False)
+        self.radioButton_m_dh.setVisible(False)
+        self.radioButton_mm.setVisible(False)
+        self.pushButton_az_odw.setVisible(False)
         
         self.label_error.clear()
 
@@ -208,6 +210,10 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(False)
         self.radioButton_grady.setVisible(False)
         self.radioButton_radiany.setVisible(False)
+        self.radioButton_cm.setVisible(False)
+        self.radioButton_m_dh.setVisible(False)
+        self.radioButton_mm.setVisible(False)
+        self.pushButton_az_odw.setVisible(False)
     
         self.label_error.clear()
 
@@ -222,8 +228,8 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
 
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
-            x = feature_geometry[0]
-            y = feature_geometry[1]
+            y = feature_geometry[0]
+            x = feature_geometry[1]
             X.append(float(x))
             Y.append(float(y))
 
@@ -243,13 +249,29 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(True)
         self.radioButton_grady.setVisible(True)
         self.radioButton_radiany.setVisible(True)
+        if not self.label_az_odw.text():      
+            self.pushButton_az_odw.setVisible(True)
         
         self.label_azymut.setText(f'{azymut_rad:.7f} [rad]')
-    
         wynik_str = f'Azymut między zaznaczonymi punktami wynosi {azymut_rad:.7f} [rad]'
         iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
     
         return azymut_rad
+    
+            
+    def az_odw(self):
+        az = self.azymut()
+        if az > pi:
+            az = az - pi
+        elif az < pi:
+            az = az + pi
+        az_odw = az
+        self.pushButton_az_odw.setVisible(False)
+        self.label_az_odw.setText(f'{az_odw:.7f} [rad]')
+        wynik_str = f'Azymut odwrotny między zaznaczonymi punktami wynosi {az_odw:.7f} [rad]'
+        iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
+        return az_odw
+        
     
     def pole(self):
         self.radioButton_kilometry.setVisible(False)
@@ -257,62 +279,50 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(False)
         self.radioButton_grady.setVisible(False)
         self.radioButton_radiany.setVisible(False)
+        self.radioButton_cm.setVisible(False)
+        self.radioButton_mm.setVisible(False)
+        self.radioButton_m_dh.setVisible(False)
+        self.pushButton_az_odw.setVisible(False)
         self.label_error.clear()
         selected_features = self.mMapLayerComboBox_layers.currentLayer().selectedFeatures()
-        str_punkty = len(selected_features)
         
-        if len(selected_features) != 3:
-            self.label_error.setText('Zaznacz dokładnie 3 punkty!')
+        if len(selected_features) < 3:
+            self.label_error.setText('Zaznacz więcej punktów')
             return
-    
-        X = []
-        Y = []
+        
+        str_punkty = len(selected_features)
+        pkt = []
         for feature in selected_features:
             feature_geometry = feature.geometry().asPoint()
-            x = feature_geometry[0]
-            y = feature_geometry[1]
-            X.append(float(x))
-            Y.append(float(y))
-            
-        # Znajdowanie otoczki wypukłej
-        points = [(x, y) for x, y in zip(X, Y)]
-        hull = ConvexHull(points)
-        hull_vertices = hull.vertices
-        hull_X = [X[i] for i in hull_vertices]
-        hull_Y = [Y[i] for i in hull_vertices]
+            X = feature_geometry.x()
+            Y = feature_geometry.y()
+            pkt.append([X, Y])
+        pkt = self.sortuj_punkty(pkt)
 
-        # Dodanie pierwszego punktu jako ostatniego elementu
-        hull_X.append(hull_X[0])
-        hull_Y.append(hull_Y[0])
-        
-        n = len(hull_X)
-        #iface.messageBar().pushMessage('n = ', f'{n}', level=Qgis.Info)
+        n = len(pkt)
         if n < 3:
             self.label_pole.setText('BŁĄD!')
             self.label_error.setText('Zaznacz więcej punktów!')
             iface.messageBar().pushWarning("Ostrzeżenie", "Zaznaczono zbyt mało punktów.")
-            pole_m2 = 0
+            pole = 0
         
         else:
             pole = 0
             for i in range(n):
-                pole += hull_X[i] * (hull_Y[i-1] - hull_Y[(i+1) % n])
+                P = (pkt[i][0] * pkt[(i+1) % n][1] - pkt[(i-1) % n][1] * pkt[i][0])
+                pole += P
             
-            
-            pole /= 2
-            pole_m2 = abs(pole)
-            poletxt = f'{pole_m2:.3f} [m2]'
+            pole = 0.5 * abs(pole)
+            poletxt = f'{pole:.3f} [m2]'
             
             self.label_pole.setText(str(poletxt))
             self.radioButton_ary.setVisible(True)
             self.radioButton_hektary.setVisible(True)
             self.radioButton_m2.setVisible(True)
             
-            wynik_str = f'Pole powierzchni figury o wybranych {str_punkty} wierzchołkach wynosi: {pole_m2:.3f} [m2]'
+            wynik_str = f'Pole powierzchni figury o wybranych {str_punkty} wierzchołkach wynosi: {pole:.3f} [m2]'
             iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
-        return pole_m2, str_punkty
-        
-
+        return pole, str_punkty
             
     def zmien_jednostke_pole(self):
         pole_m, punkty_str = self.pole()
@@ -346,6 +356,24 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             wynik_str = f'Odległość odcinka między zaznaczonymi punktami wynosi {odl_m:.3f} [m]'
         iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
         
+    def zmien_jednostke_dh(self):
+        dh_m = self.roznica_wysokosci()
+        if self.radioButton_cm.isChecked():
+            dh_cm = dh_m * 100
+            self.label_dH.setText(f'{dh_cm:.3f} [cm]')
+            wynik_str = f'Różnica wysokości między wybranymi punktami wynosi: {dh_cm:.3f} [cm]'
+        elif self.radioButton_mm.isChecked():
+            dh_mm = dh_m * 1000
+            self.label_dH.setText(f'{dh_mm:.3f} [mm]')
+            wynik_str = f'Różnica wysokości między wybranymi punktami wynosi: {dh_mm:.3f} [mm]'
+        elif self.radioButton_m_dh.isChecked():
+            self.label_dH.setText(f'{dh_m:.3f} [m]')
+            wynik_str = f'Różnica wysokości między wybranymi punktami wynosi: {dh_m:.3f} [m]'
+        else:
+            self.label_dH.setText(f'{dh_m:.3f} [m]')
+            wynik_str = f'Różnica wysokości między wybranymi punktami wynosi: {dh_m:.3f} [m]'   
+        iface.messageBar().pushMessage("Wynik", wynik_str , level=Qgis.Info)
+        
     def zmien_jednostke_azymut(self):
         az_rad = self.azymut()
         if az_rad < 0:
@@ -376,21 +404,60 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
             wynik_str = f'Azymut między zaznaczonymi punktami wynosi {az_rad:.7f} [rad]'
         iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
         
+    def zmien_jednostke_az_odw(self):
+        if not self.label_az_odw.text():
+            return
+        
+        az_rad = self.az_odw()
+        
+        if az_rad < 0:
+            az_rad = az_rad + 2 * pi
+        elif az_rad > (2 * pi):
+            az_rad = az_rad - 2 * pi
+        if self.radioButton_grady.isChecked():
+            az_g = az_rad * 200/pi
+            if az_g < 0:
+                az_g = az_g + 400
+            elif az_g > 400:
+                az_g = az_g - 400
+            self.label_az_odw.setText(f'{az_g:.5f} [g]')
+            wynik_str = f'Azymut odwrotny między zaznaczonymi punktami wynosi {az_g:.5f} [g]'
+        elif self.radioButton_stopnie.isChecked():
+            az_deg = degrees(az_rad)
+            if az_deg < 0:
+                az_deg = az_deg + 360
+            elif az_deg > 360:
+                az_deg = az_deg - 360
+            self.label_az_odw.setText(f'{az_deg:.5f} [deg]')
+            wynik_str = f'Azymut odwrotny między zaznaczonymi punktami wynosi {az_deg:.5f} [deg]' 
+        elif self.radioButton_radiany.isChecked():
+            self.label_az_odw.setText(f'{az_rad:.7f} [rad]')
+            wynik_str = f'Azymut odwrotny między zaznaczonymi punktami wynosi {az_rad:.7f} [rad]'
+        else:
+            self.label_az_odw.setText(f'{az_rad:.7f} [rad]')
+            wynik_str = f'Azymut odwrotny między zaznaczonymi punktami wynosi {az_rad:.7f} [rad]'
+        iface.messageBar().pushMessage("Wynik", wynik_str, level=Qgis.Info)
+        
+    def zmien_jednostki(self):
+        self.zmien_jednostke_az_odw()
+        self.zmien_jednostke_azymut()
+        
+    
     def poligon(self):
         xy = self.punkty()
         if len(xy) < 3:
             self.label_error.setText('Za mało punktów')
             return
         
-        if len(xy) > 3:
-            self.label_error.setText('Za dużo punktów')
-            return
+        #if len(xy) > 3:
+         #   self.label_error.setText('Za dużo punktów')
+          #  return
         
-        if len(xy) != 3:
-            iface.messageBar().pushMessage("Ostrzeżenie", "Zaznacz dokładnie 3 punkty.", level=Qgis.Warning)
-            return
+        #if len(xy) != 3:
+         #   iface.messageBar().pushMessage("Ostrzeżenie", "Zaznacz dokładnie 3 punkty.", level=Qgis.Warning)
+          #  return
     
-        punkty = [QgsPointXY(*p) for p in xy]
+        punkty = [QgsPointXY(point[0], point[1]) for point in xy]
         punkty.append(punkty[0])
 
         pol_geom = QgsGeometry.fromPolygonXY([punkty])
@@ -428,8 +495,16 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         iface.messageBar().pushMessage("Poligon został utworzony", level=Qgis.Info)
         #self.label_poligon.setText('Poligon utworzony')
 
+    def dobierz_kat(self, p, punkt_ref):
+        dx = p[0] - punkt_ref[0]
+        dy = p[1] - punkt_ref[1]
+        kat = atan2(dy,dx)
+        return kat
 
-
+    def sortuj_punkty(self, xy):
+        punkt_ref = [sum(p[0] for p in xy) / len(xy), sum(p[1] for p in xy) / len(xy)]
+        xy_sort = sorted(xy, key=lambda p: self.dobierz_kat(p, punkt_ref))
+        return xy_sort
             
     def closeEvent(self, event):
         super().closeEvent(event)
@@ -438,6 +513,8 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.label_odleglosc.clear()
         self.label_liczbaelementow.clear()
         self.label_error.clear()
+        self.label_az_odw.clear()
+        self.label_dH.clear()
         self.radioButton_ary.setChecked(False)
         self.radioButton_hektary.setChecked(False)
         self.radioButton_m2.setChecked(False)
@@ -454,6 +531,8 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.label_odleglosc.clear()
         self.label_liczbaelementow.clear()
         self.label_error.clear()
+        self.label_az_odw.clear()
+        self.label_dH.clear()
         self.radioButton_ary.setChecked(False)
         self.radioButton_hektary.setChecked(False)
         self.radioButton_m2.setChecked(False)
@@ -462,6 +541,9 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setChecked(False)
         self.radioButton_metry.setChecked(False)
         self.radioButton_kilometry.setChecked(False)
+        self.radioButton_m_dh.setChecked(False)
+        self.radioButton_cm.setChecked(False)
+        self.radioButton_mm.setChecked(False)
         self.radioButton_ary.setVisible(False)
         self.radioButton_hektary.setVisible(False)
         self.radioButton_m2.setVisible(False)
@@ -470,6 +552,10 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
         self.radioButton_stopnie.setVisible(False)
         self.radioButton_metry.setVisible(False)
         self.radioButton_kilometry.setVisible(False)
+        self.radioButton_m_dh.setVisible(False)
+        self.radioButton_cm.setVisible(False)
+        self.radioButton_mm.setVisible(False)
+        self.pushButton_az_odw.setVisible(False)
         
     def clear_selection(self):
         layer = self.mMapLayerComboBox_layers.currentLayer()
@@ -528,14 +614,14 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                 
              # Dodanie warstwy do projektu QGIS
             uri = "Point?crs={}".format(uklad_epsg)
-            layer = QgsVectorLayer(uri, "Warstwa", "memory")
+            layer = QgsVectorLayer(uri, "Nowa warstwa", "memory")
             provider = layer.dataProvider()
         
             for wiersz in wiersze:
                 if wiersz[0] and wiersz[1]:  # Sprawdź, czy wartości nie są puste
                     try:
-                        x = float(wiersz[0])
-                        y = float(wiersz[1])
+                        y = float(wiersz[0])
+                        x = float(wiersz[1])
                         feature = QgsFeature()
                         point = QgsPointXY(x, y)
                         geometry = QgsGeometry.fromPointXY(point)
@@ -545,56 +631,3 @@ class projekt2Dialog(QtWidgets.QDialog, FORM_CLASS):
                         QMessageBox.warning(self, "Błąd konwersji", "Wystąpił błąd podczas konwersji współrzędnych.")
         
             QgsProject.instance().addMapLayer(layer)
-            
-        
-    def dodaj_geometrie(self):
-        warstwa_wejsciowa = self.mMapLayerComboBox_layers.currentLayer()
-
-        if warstwa_wejsciowa is None:
-            QMessageBox.warning(self, "Błąd", "Nie wybrano warstwy.")
-            return
-
-        if len(warstwa_wejsciowa.selectedFeatures()) == 0:
-            QMessageBox.warning(self, "Błąd", "Nie zaznaczono funkcji na warstwie.")
-            return
-
-        aktywna_geometria = warstwa_wejsciowa.selectedFeatures()[0].geometry()
-        
-        # Tworzenie warstwy z dodaną geometrią
-        typ_geometrii = QgsWkbTypes.displayString(aktywna_geometria.wkbType())
-        pola_warstwa = QgsVectorLayer(typ_geometrii, "Poligon_z_dodaną_geometrią", "memory")
-
-        if not pola_warstwa.isValid():
-            QMessageBox.warning(self, "Błąd", "Nie można utworzyć warstwy.")
-            return
-        
-        # Dodanie atrybutu "area" do warstwy
-        pola_warstwa.startEditing()
-        pola_warstwa.addAttribute(QgsField("area", QVariant.Double))
-        pola_warstwa.commitChanges()
-
-        funkcja_z_geometria = QgsFeature()
-        funkcja_z_geometria.setGeometry(aktywna_geometria)
-
-        pola_warstwa.startEditing()
-        pola_warstwa.addFeature(funkcja_z_geometria)
-        pola_warstwa.commitChanges()
-        
-        pola_warstwa.updateFields()
-        
-        # Ustalenie indeksu pola "area"
-        pole_area_index = pola_warstwa.fields().indexFromName("area")
-        if pole_area_index == -1:
-            QMessageBox.warning(self, "Błąd", "Pole 'area' nie istnieje w warstwie.")
-            return
-
-        # Ustawienie wartości atrybutu "area"
-        pola_warstwa.changeAttributeValue(funkcja_z_geometria.id(), pole_area_index, aktywna_geometria.area())
-
-        pola_warstwa.startEditing()
-        pola_warstwa.updateFeature(funkcja_z_geometria)
-        pola_warstwa.commitChanges()
-        
-        QgsProject.instance().addMapLayer(pola_warstwa)
-
-        iface.messageBar().pushMessage("Nowa warstwa została dodana z aktywną geometrią.", level=Qgis.Info)
